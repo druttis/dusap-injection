@@ -6,7 +6,7 @@ import javax.inject.Provider;
 import java.util.concurrent.atomic.AtomicReference;
 
 public enum Scopings implements Scoping {
-    NO_SCOPE {
+    NO_SCOPING {
         @Override
         public <T> Provider<T> scope(final Provider<T> provider) {
             return provider;

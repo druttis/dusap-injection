@@ -184,7 +184,7 @@ public final class InjectorImpl implements Injector {
             if (scope != null) {
                 scoping = scopingFactoryRegistry.getScoping(scope);
             } else {
-                scoping = Scopings.NO_SCOPE;
+                scoping = Scopings.NO_SCOPING;
             }
             final boolean exposed = (method.getAnnotation(Expose.class) != null);
             final BindingImpl<?> binding = new BindingImpl(key, exposed, provider, scoping);
