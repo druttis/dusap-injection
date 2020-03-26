@@ -1,14 +1,24 @@
 # dusap-injection
 The new dusap dependency injector
 
+#### Supports
 * Light-weight
 * Small! (less than 30KB jar)
 * ProviderMethod driven
 * Hide/Expose Bindings
+* Multiple annotation key qualifier
 * Scoping
-* Generics
+    * NO_SCOPING
+    * SINGLETON
+    * Register your own factory to extend with more scopes
+* Generics supported
+* Module with dependencies
+* On the fly injector creation
 
-### Examples
+#### To be done
+* Injector.newInjector(Class<? extends Module> moduleType); // be able to create a child injector configured by specified module but that does not share the dependency graph. Good for plugins etc.
+
+#### A little example
 
 ```java
 class ModuleA implements Module {
@@ -54,13 +64,13 @@ class ModuleC implements Module {
     // returns string bound to name 'a' and string bound in ModuleB as a string array
     @Provides
     @Singleton
-    String[] provideStrings(@SNamed("a") String a, @Source(ModuleB.class) String b) {
-        return new String[] {a, b};
+    List<String> provideStrings(@Named("a") String a, @Source(ModuleB.class) String b) {
+        return Arrays.asList(a, b);
     }
     
     @Inject
-    void dump(String[] list) {
-        System.out.println(Arrays.asList(list));
+    void dump(List<String> list) {
+        System.out.println(list);
     }
 }
 
@@ -69,4 +79,12 @@ class Test {
         InjectionBuilder.newInjector(ModuleC.class);
     }
 }
+```
+
+It is also possible to do this
+```java
+Injection injection = new InjectionBuilder()
+    .withScopingFactory(MyScopeAnnotation.class, new MyScopingFactory())
+    .build();
+Injector injector = injection.getInjector(SomeModule.class);
 ```
