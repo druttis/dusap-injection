@@ -7,10 +7,7 @@ import org.dru.dusap.inject.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class InjectionImpl implements Injection {
@@ -41,8 +38,9 @@ public final class InjectionImpl implements Injection {
         InjectorImpl injectorImpl = injectorImplByModuleType.get(moduleType);
         if (injectorImpl == null) {
             InjectionUtils.checkModuleCircularity(moduleType);
-            InjectionUtils.getDependencyTypes(moduleType).forEach(this::getInjectorInternal);
-            injectorImpl = new InjectorImpl(this, null, scopingFactoryRegistry, moduleType);
+            final Collection<Class<? extends Module>> dependencyTypes = InjectionUtils.getDependencyTypes(moduleType);
+            dependencyTypes.forEach(this::getInjectorInternal);
+            injectorImpl = new InjectorImpl(this, null, scopingFactoryRegistry, moduleType, dependencyTypes);
             injectorImplByModuleType.put(moduleType, injectorImpl);
             final Module moduleInstance = injectorImpl.newInstance(moduleType, false);
             logger.trace("configuring injector for {}", moduleType.getName());

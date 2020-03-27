@@ -10,11 +10,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class InjectionUtils {
-    public static Predicate<AnnotatedElement> INJECT_ANNOTATED_ELEMENT
-            = (element) -> (element.isAnnotationPresent(Inject.class));
-    public static Predicate<Method> PROVIDES_ANNOTATED_METHOD
-            = (method) -> (method.isAnnotationPresent(Provides.class));
-
     public static List<Annotation> getScopeAnnotations(final AnnotatedElement element) {
         Objects.requireNonNull(element, "element");
         return Stream.of(element.getAnnotations())
@@ -30,7 +25,7 @@ public final class InjectionUtils {
         if (annotations.size() == 1) {
             return annotations.get(0);
         }
-        throw new IllegalArgumentException("multiple scope annotations");
+        throw new ScopeException("multiple scope annotations: %s", annotations);
     }
 
     public static List<Class<? extends Module>> getDependencyTypes(final Class<? extends Module> moduleType) {
@@ -50,8 +45,8 @@ public final class InjectionUtils {
         if (visitedTypes.add(currentType)) {
             for (final Class<? extends Module> dependencyType : getDependencyTypes(currentType)) {
                 if (dependencyType.equals(moduleType)) {
-                    throw new IllegalArgumentException(String.format("circular dependency: %s <-> %s",
-                            moduleType.getName(), currentType.getName()));
+                    throw new DependencyException("circular dependency: %s <-> %s",
+                            moduleType.getName(), currentType.getName());
                 }
                 checkModuleCircularity(moduleType, dependencyType, visitedTypes);
             }
@@ -132,7 +127,7 @@ public final class InjectionUtils {
         try {
             return constructor.newInstance(initargs);
         } catch (final InstantiationException | IllegalAccessException | InvocationTargetException exc) {
-            throw new RuntimeException(exc);
+            throw new RuntimeException("failed to create new instance: " + constructor.toGenericString(), exc);
         }
     }
 
@@ -143,7 +138,7 @@ public final class InjectionUtils {
         try {
             field.set(object, value);
         } catch (final IllegalAccessException exc) {
-            throw new RuntimeException(exc);
+            throw new RuntimeException("failed to set field: " + field.toGenericString(), exc);
         }
     }
 
@@ -154,10 +149,11 @@ public final class InjectionUtils {
         try {
             return method.invoke(object, args);
         } catch (final IllegalAccessException | InvocationTargetException exc) {
-            throw new RuntimeException(exc);
+            throw new RuntimeException("failed to invoke method: " + method.toGenericString(), exc);
         }
     }
 
-    private InjectionUtils() {
+    private InjectionUtils() throws InstantiationException {
+        throw new InstantiationException();
     }
 }

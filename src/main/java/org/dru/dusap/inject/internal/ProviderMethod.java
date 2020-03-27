@@ -4,12 +4,12 @@ import javax.inject.Provider;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
-public final class ProviderMethod<T> implements Provider<T> {
+final class ProviderMethod<T> implements Provider<T> {
     private final InjectorImpl injector;
     private final Supplier<?> supplier;
     private final Method method;
 
-    public ProviderMethod(final InjectorImpl injector, final Supplier<?> supplier, final Method method) {
+    ProviderMethod(final InjectorImpl injector, final Supplier<?> supplier, final Method method) {
         this.injector = injector;
         this.supplier = supplier;
         this.method = method;

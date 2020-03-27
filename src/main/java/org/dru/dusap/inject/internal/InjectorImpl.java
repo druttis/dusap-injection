@@ -9,9 +9,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -27,15 +25,18 @@ public final class InjectorImpl implements Injector {
     private final InjectorImpl parentInjectorImpl;
     private final ScopingFactoryRegistry scopingFactoryRegistry;
     private final Class<? extends Module> moduleType;
+    private final Set<Class<? extends Module>> dependencyTypes;
     private final Map<Key<?>, BindingImpl<?>> bindingImplByKey;
     private Module moduleInstance;
 
     InjectorImpl(final InjectionImpl injectionImpl, final InjectorImpl parentInjectorImpl,
-                 final ScopingFactoryRegistry scopingFactoryRegistry, final Class<? extends Module> moduleType) {
+                 final ScopingFactoryRegistry scopingFactoryRegistry, final Class<? extends Module> moduleType,
+                 final Collection<Class<? extends Module>> dependencyTypes) {
         this.injectionImpl = injectionImpl;
         this.parentInjectorImpl = parentInjectorImpl;
         this.scopingFactoryRegistry = scopingFactoryRegistry;
         this.moduleType = moduleType;
+        this.dependencyTypes = new HashSet<>(dependencyTypes);
         bindingImplByKey = new ConcurrentHashMap<>();
     }
 
@@ -64,11 +65,15 @@ public final class InjectorImpl implements Injector {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getInstance(final Key<T> key) {
+        Objects.requireNonNull(key, "key");
         final Class<? extends Module> sourceType = key.getSourceTypeOrDefault(moduleType);
         final InjectorImpl injector = injectionImpl.getInjector(sourceType);
+        if (injector != this && !dependencyTypes.contains(injector.getModuleType())) {
+            throw new DependencyException("illegal dependency: %s", injector.getModuleType().getName());
+        }
         final BindingImpl<?> binding = injector.getBindingOrNull(key.withoutSource());
         if (binding == null) {
-            throw new IllegalArgumentException("no such binding: " + key);
+            throw new BindingException("no such binding: %", key);
         }
         return (T) binding.getInstance();
     }
@@ -158,7 +163,7 @@ public final class InjectorImpl implements Injector {
                 return bindings.get(0);
             }
             if (bindings.size() > 1) {
-                throw new IllegalArgumentException("multiple bindings: " + bindings);
+                throw new BindingException("multiple bindings: %s", bindings);
             }
         }
         return null;
@@ -176,7 +181,7 @@ public final class InjectorImpl implements Injector {
             final Key<?> key = Key.of(method.getGenericReturnType(), method);
             final Binding<?> existing = bindingImplByKey.get(key);
             if (existing != null) {
-                throw new IllegalArgumentException("already bound: " + existing);
+                throw new BindingException("already bound: %s", existing);
             }
             final Provider<?> provider = new ProviderMethod<>(this, () -> moduleInstance, method);
             final Annotation scope = InjectionUtils.getScopeAnnotation(method);

@@ -1,5 +1,6 @@
 package org.dru.dusap.inject.internal;
 
+import org.dru.dusap.inject.ScopeException;
 import org.dru.dusap.inject.Scoping;
 import org.dru.dusap.inject.ScopingFactory;
 
@@ -21,7 +22,7 @@ public final class ScopingFactoryRegistry {
         checkScopeAnnotated(annotationType);
         Objects.requireNonNull(scopingFactory, "scopingFactory");
         if (scopingFactoryByAnnotationType.computeIfAbsent(annotationType, ($) -> scopingFactory) != scopingFactory) {
-            throw new IllegalArgumentException("factory already registered: type=" + annotationType.getName());
+            throw new ScopeException("factory already registered: %s", annotationType.getName());
         }
     }
 
@@ -30,7 +31,7 @@ public final class ScopingFactoryRegistry {
         checkScopeAnnotated(annotationType);
         final ScopingFactory<T> scopingFactory = (ScopingFactory<T>) scopingFactoryByAnnotationType.get(annotationType);
         if (scopingFactory == null) {
-            throw new IllegalArgumentException("no such factory: type=" + annotationType.getName());
+            throw new ScopeException("no such factory: %s", annotationType.getName());
         }
         return scopingFactory;
     }
@@ -41,14 +42,18 @@ public final class ScopingFactoryRegistry {
         final Class<T> annotationType = (Class<T>) annotation.getClass();
         checkScopeAnnotated(annotationType);
         final ScopingFactory<T> scopingFactory = getScopingFactoryByAnnotationType(annotationType);
-        return scopingFactory.getScoping(annotation);
+        try {
+            return scopingFactory.getScoping(annotation);
+        } catch (final RuntimeException exc) {
+            throw new ScopeException("unhandled exception caught caused by scopingFactory %s", exc,
+                    scopingFactory.getClass().getName());
+        }
     }
 
     private void checkScopeAnnotated(final Class<? extends Annotation> annotationType) {
         Objects.requireNonNull(annotationType, "annotationType");
         if (!annotationType.isAnnotationPresent(Scope.class)) {
-            throw new IllegalArgumentException(String.format("@%s is not a @%s annotation",
-                    annotationType.getName(), Scope.class.getName()));
+            throw new ScopeException("@%s is not a @%s annotation", annotationType.getName(), Scope.class.getName());
         }
     }
 }

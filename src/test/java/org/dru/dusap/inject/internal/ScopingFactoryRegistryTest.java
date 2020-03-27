@@ -1,5 +1,6 @@
 package org.dru.dusap.inject.internal;
 
+import org.dru.dusap.inject.ScopeException;
 import org.dru.dusap.inject.Source;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,7 +27,7 @@ public class ScopingFactoryRegistryTest {
         try {
             scopingFactoryRegistry.registerScopingFactory(Singleton.class, new SingletonScopingFactory());
             Assert.fail();
-        } catch (final Exception exc) {
+        } catch (final ScopeException exc) {
             // success
         }
 
@@ -34,7 +35,7 @@ public class ScopingFactoryRegistryTest {
         try {
             scopingFactoryRegistry.registerScopingFactory(Source.class, annotation -> null);
             Assert.fail();
-        } catch (final Exception exc) {
+        } catch (final ScopeException exc) {
             // success
         }
     }
@@ -49,7 +50,7 @@ public class ScopingFactoryRegistryTest {
             scopingFactoryRegistry.getScopingFactoryByAnnotationType(Source.class);
             Assert.fail();
         }
-        catch (final Exception exc) {
+        catch (final ScopeException exc) {
             // success
         }
 
@@ -58,7 +59,7 @@ public class ScopingFactoryRegistryTest {
             scopingFactoryRegistry.getScopingFactoryByAnnotationType(DummyScope.class);
             Assert.fail();
         }
-        catch (final Exception exc) {
+        catch (final ScopeException exc) {
             // success
         }
     }

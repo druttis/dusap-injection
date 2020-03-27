@@ -6,8 +6,9 @@ import org.junit.Test;
 import javax.inject.Inject;
 
 public class InjectorTest {
-    @Test(expected = Exception.class)
+    @Test(expected = BindingException.class)
     public void test() {
+        // test guard vs multiple bindings
         InjectionBuilder.newInjector(ModuleC.class).getInstance(Dumper.class);
     }
 
