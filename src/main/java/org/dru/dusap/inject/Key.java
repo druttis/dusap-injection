@@ -5,6 +5,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -43,6 +44,14 @@ public final class Key<T> {
         Objects.requireNonNull(qualifiers, "qualifiers");
         this.type = TypeLiteral.normalize(type);
         this.qualifiers = qualifiers;
+    }
+
+    public TypeLiteral<T> getType() {
+        return type;
+    }
+
+    public Set<Annotation> getQualifiers() {
+        return Collections.unmodifiableSet(qualifiers);
     }
 
     public Class<? extends Module> getSourceTypeOrDefault(final Class<? extends Module> defaultType) {
