@@ -38,6 +38,9 @@ public final class InjectorImpl implements Injector {
         this.moduleType = moduleType;
         this.dependencyTypes = new HashSet<>(dependencyTypes);
         bindingImplByKey = new ConcurrentHashMap<>();
+        final Key<Injector> key = Key.of(Injector.class, null);
+        final Provider<Injector> provider = () -> this;
+        bindingImplByKey.put(key, new BindingImpl<>(key, false, provider, Scopings.NO_SCOPING));
     }
 
     @Override
@@ -73,7 +76,7 @@ public final class InjectorImpl implements Injector {
         }
         final BindingImpl<?> binding = injector.getBindingOrNull(key.withoutSource());
         if (binding == null) {
-            throw new BindingException("no such binding: %", key);
+            throw new BindingException("no such binding: %s", key);
         }
         return (T) binding.getInstance();
     }
