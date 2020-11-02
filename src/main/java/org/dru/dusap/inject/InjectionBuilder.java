@@ -4,8 +4,10 @@ import org.dru.dusap.inject.internal.InjectionImpl;
 import org.dru.dusap.inject.internal.ScopingFactoryRegistry;
 import org.dru.dusap.inject.internal.SingletonScopingFactory;
 
+import javax.inject.Scope;
 import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
+import java.util.Objects;
 
 @SuppressWarnings("UnusedReturnValue")
 public final class InjectionBuilder {

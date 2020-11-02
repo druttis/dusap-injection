@@ -39,7 +39,7 @@ public final class ScopingFactoryRegistry {
     @SuppressWarnings("unchecked")
     public <T extends Annotation> Scoping getScoping(final T annotation) {
         Objects.requireNonNull(annotation, "annotation");
-        final Class<T> annotationType = (Class<T>) annotation.getClass();
+        final Class<T> annotationType = (Class<T>) annotation.annotationType();
         checkScopeAnnotated(annotationType);
         final ScopingFactory<T> scopingFactory = getScopingFactoryByAnnotationType(annotationType);
         try {
