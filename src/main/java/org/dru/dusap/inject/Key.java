@@ -1,5 +1,7 @@
 package org.dru.dusap.inject;
 
+import org.dru.dusap.base.TypeLiteral;
+
 import javax.inject.Qualifier;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;

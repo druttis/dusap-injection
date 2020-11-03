@@ -1,5 +1,7 @@
 package org.dru.dusap.inject;
 
+import org.dru.dusap.base.ReflectionUtils;
+
 import javax.inject.Inject;
 import javax.inject.Scope;
 import java.lang.annotation.Annotation;
@@ -11,10 +13,7 @@ import java.util.stream.Stream;
 
 public final class InjectionUtils {
     public static List<Annotation> getScopeAnnotations(final AnnotatedElement element) {
-        Objects.requireNonNull(element, "element");
-        return Stream.of(element.getAnnotations())
-                .filter((annotation) -> annotation.annotationType().isAnnotationPresent(Scope.class))
-                .collect(Collectors.toList());
+        return ReflectionUtils.getAnnotationsAnnotatedWith(element, Scope.class);
     }
 
     public static Annotation getScopeAnnotation(final AnnotatedElement element) {
