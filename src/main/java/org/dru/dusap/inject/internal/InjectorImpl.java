@@ -26,6 +26,7 @@ public final class InjectorImpl implements Injector {
     private final ScopingFactoryRegistry scopingFactoryRegistry;
     private final Class<? extends Module> moduleType;
     private final Set<Class<? extends Module>> dependencyTypes;
+    private final Set<Class<? extends Module>> childTypes;
     private final Map<Key<?>, BindingImpl<?>> bindingImplByKey;
     private Module moduleInstance;
 
@@ -37,10 +38,14 @@ public final class InjectorImpl implements Injector {
         this.scopingFactoryRegistry = scopingFactoryRegistry;
         this.moduleType = moduleType;
         this.dependencyTypes = new HashSet<>(dependencyTypes);
+        childTypes = ConcurrentHashMap.newKeySet();
         bindingImplByKey = new ConcurrentHashMap<>();
         final Key<Injector> key = Key.of(Injector.class, null);
         final Provider<Injector> provider = () -> this;
         bindingImplByKey.put(key, new BindingImpl<>(key, false, provider, Scopings.NO_SCOPING));
+        dependencyTypes.forEach(dependencyType -> {
+            injectionImpl.getInjector(dependencyType).childTypes.add(moduleType);
+        });
     }
 
     @Override
@@ -144,29 +149,46 @@ public final class InjectorImpl implements Injector {
     }
 
     <T> BindingImpl<T> getBindingOrNull(final Key<T> key) {
-        BindingImpl<T> binding = getLocalBinding(key);
-        if (binding != null) {
-            return binding;
-        }
-        if (parentInjectorImpl != null) {
-            binding = parentInjectorImpl.getBindingOrNull(key);
-            if (binding != null && binding.isExposed()) {
+        return getBindingOrNull(key, new HashSet<>());
+    }
+
+    <T> BindingImpl<T> getBindingOrNull(final Key<T> key, final Set<Class<? extends Module>> visitedModuleTypes) {
+        if (visitedModuleTypes.add(moduleType)) {
+            BindingImpl<T> binding = getLocalBinding(key);
+            if (binding != null) {
                 return binding;
             }
-        }
-        if (injectionImpl != null) {
-            final List<BindingImpl<T>> bindings = new ArrayList<>();
-            for (final Class<? extends Module> dependencyType : InjectionUtils.getDependencyTypes(moduleType)) {
-                binding = injectionImpl.getInjector(dependencyType).getLocalBinding(key);
+            if (parentInjectorImpl != null) {
+                binding = parentInjectorImpl.getBindingOrNull(key);
                 if (binding != null && binding.isExposed()) {
-                    bindings.add(binding);
+                    return binding;
                 }
             }
-            if (bindings.size() == 1) {
-                return bindings.get(0);
-            }
-            if (bindings.size() > 1) {
-                throw new BindingException("multiple bindings: %s", bindings);
+            if (injectionImpl != null) {
+                final List<BindingImpl<T>> bindings = new ArrayList<>();
+                for (final Class<? extends Module> dependencyType : InjectionUtils.getDependencyTypes(moduleType)) {
+                    binding = injectionImpl.getInjector(dependencyType).getLocalBinding(key);
+                    if (binding != null && binding.isExposed()) {
+                        bindings.add(binding);
+                    }
+                }
+                if (bindings.size() == 1) {
+                    return bindings.get(0);
+                } else if (bindings.size() > 1) {
+                    throw new BindingException("multiple bindings: %s", bindings);
+                } else {
+                    for (final Class<? extends Module> childType : childTypes) {
+                        binding = injectionImpl.getInjector(childType).getBindingOrNull(key, visitedModuleTypes);
+                        if (binding != null) {
+                            bindings.add(binding);
+                        }
+                    }
+                    if (bindings.size() == 1) {
+                        return bindings.get(0);
+                    } else if (bindings.size() > 1) {
+                        throw new BindingException("multiple bindings: %s", bindings);
+                    }
+                }
             }
         }
         return null;
