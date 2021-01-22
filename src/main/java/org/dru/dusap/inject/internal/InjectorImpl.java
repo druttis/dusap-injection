@@ -43,9 +43,7 @@ public final class InjectorImpl implements Injector {
         final Key<Injector> key = Key.of(Injector.class, null);
         final Provider<Injector> provider = () -> this;
         bindingImplByKey.put(key, new BindingImpl<>(key, false, provider, Scopings.NO_SCOPING));
-        dependencyTypes.forEach(dependencyType -> {
-            injectionImpl.getInjector(dependencyType).childTypes.add(moduleType);
-        });
+        dependencyTypes.forEach(dependencyType -> injectionImpl.getInjector(dependencyType).childTypes.add(moduleType));
     }
 
     @Override
